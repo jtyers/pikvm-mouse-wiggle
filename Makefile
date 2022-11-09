@@ -1,4 +1,4 @@
-PIP_PACKAGE_NAME = aws-policy-generator
+PIP_PACKAGE_NAME = pikvm-mouse-wiggle
 
 .SHELLFLAGS = -ec
 .ONESHELL:
@@ -10,7 +10,8 @@ init:
 
 .PHONY: test
 test:
-	pytest tests
+	# no tests to run currently
+	# pytest tests
 
 .PHONY: build_dist
 build_dist: test
