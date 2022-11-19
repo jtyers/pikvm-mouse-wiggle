@@ -4,9 +4,12 @@
 import argparse
 from contextlib import contextmanager
 import json
+import logging
 import ssl
 import time
 import websocket
+
+logger = logging.getLogger(__name__)
 
 
 @contextmanager
@@ -22,7 +25,7 @@ def connect(hostname, username, password):
     ws.close()
 
 
-def wiggle(hostname, username, password, delay_secs):
+def wiggle(hostname, username, password, delay_secs, ignore_errors=True):
     positions = [
         (0, 0),
         (1, 1),
@@ -32,21 +35,26 @@ def wiggle(hostname, username, password, delay_secs):
     ]
 
     while True:
-        with connect(hostname, username, password) as ws:
-            print('.', end='')
+        try:
+            with connect(hostname, username, password) as ws:
+                logger.debug("connected to %s, sending mouse moves", hostname)
 
-            for x, y in positions:
-                ws.send(json.dumps({
-                    "event_type": "mouse_move",
-                    "event": {
-                        "to": {
-                            "x":x,
-                            "y":y
-                        }
-                    }
-                }))
+                for x, y in positions:
+                    ws.send(
+                        json.dumps(
+                            {
+                                "event_type": "mouse_move",
+                                "event": {"to": {"x": x, "y": y}},
+                            }
+                        )
+                    )
 
-                time.sleep(0.1)
+                    time.sleep(0.1)
+
+        except OSError as ex:
+            if not ignore_errors:
+                raise ex
+
+            logger.error("connect error (ignoring): %s", ex)
 
         time.sleep(delay_secs)
-
