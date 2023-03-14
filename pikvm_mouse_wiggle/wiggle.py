@@ -1,7 +1,6 @@
 #!/usr/bin/python3 -u
 # https://github.com/pikvm/pikvm/issues/786#issuecomment-1196425318
 
-import argparse
 from contextlib import contextmanager
 import json
 import logging
@@ -13,7 +12,9 @@ logger = logging.getLogger(__name__)
 
 
 @contextmanager
-def connect(hostname, username, password):
+def connect(hostname: str, username: str, password: str) -> websocket.WebSocket:
+    """A context manager that opens a websocket connection to a PiKVM websocket server,
+    and yields the socket. The connection is closed when the context finishes."""
     uri = f"wss://{hostname}/api/ws?stream=0"
     headers = {"X-KVMD-User": username, "X-KVMD-Passwd": password}
 
@@ -25,7 +26,24 @@ def connect(hostname, username, password):
     ws.close()
 
 
-def wiggle(hostname, username, password, delay_secs, ignore_errors=True):
+def wiggle(
+    hostname: str,
+    username: str,
+    password: str,
+    delay_secs: float | int = 0,
+    ignore_errors: bool = True,
+) -> None:
+    """Move the mouse in the top-left corner of the screen on the given VNC server, and
+    optionally do this at a regular interval.
+
+    hostname, username and password are the VNC server connection details.
+
+    delay_secs, if non-zero and positive, will cause the function to enter a loop which
+    performs the mouse movement every <delay_secs> seconds. The only way to interrupt
+    this, if ignore_errors is also True, is to use Ctrl+C.
+
+    ignore_errors, if True, will suppress any errors encountered while communicating
+    with VNC, such as if the server is down."""
     positions = [
         (0, 0),
         (1, 1),
@@ -34,7 +52,7 @@ def wiggle(hostname, username, password, delay_secs, ignore_errors=True):
         (0, 0),
     ]
 
-    while True:
+    def _wiggle() -> None:
         try:
             with connect(hostname, username, password) as ws:
                 logger.debug("connected to %s, sending mouse moves", hostname)
@@ -57,4 +75,11 @@ def wiggle(hostname, username, password, delay_secs, ignore_errors=True):
 
             logger.error("connect error (ignoring): %s", ex)
 
-        time.sleep(delay_secs)
+    if delay_secs > 0:
+        while True:
+            _wiggle()
+
+            time.sleep(delay_secs)
+
+    else:
+        _wiggle()

@@ -1,1 +1,2 @@
 from pikvm_mouse_wiggle.wiggle import wiggle
+from pikvm_mouse_wiggle.child import run_with_polling
