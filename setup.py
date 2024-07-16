@@ -11,7 +11,7 @@ README = (HERE / "README.md").read_text()
 # This call to setup() does all the work
 setup(
     name="pikvm-mouse-wiggle",
-    version="0.0.2",
+    version="0.0.3",
     description="PI-KVM Mouse Wiggle",
     long_description=README,
     long_description_content_type="text/markdown",
@@ -27,7 +27,9 @@ setup(
     ],
     packages=find_packages(exclude=("tests",)),
     include_package_data=True,
-    install_requires=[],
+    install_requires=[
+        "websocket>=0.2.1",
+    ],
     entry_points={
         "console_scripts": [
             "pikvm-mouse-wiggle = pikvm_mouse_wiggle._internal.main:main",
