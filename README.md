@@ -8,6 +8,14 @@ This is for where you have a system which you use via PiKVM which enacts a scree
 
 You can get USB dongles that perform this wiggling for you, but for PiKVM users this option is cheaper.
 
+## Requirements  
+
+You may need to install this dependency:
+
+```
+pip install websocket_client
+```
+
 ## Installation
 
 Installation is via PyPI:
