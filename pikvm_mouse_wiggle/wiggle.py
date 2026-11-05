@@ -4,6 +4,7 @@
 from contextlib import contextmanager
 import json
 import logging
+import requests
 import ssl
 import time
 import websocket
@@ -12,10 +13,12 @@ logger = logging.getLogger(__name__)
 
 
 @contextmanager
-def connect(hostname: str, username: str, password: str) -> websocket.WebSocket:
+def connect(
+    hostname: str, username: str, password: str, path: str = "/api/ws?stream=0"
+) -> websocket.WebSocket:
     """A context manager that opens a websocket connection to a PiKVM websocket server,
     and yields the socket. The connection is closed when the context finishes."""
-    uri = f"wss://{hostname}/api/ws?stream=0"
+    uri = f"wss://{hostname}{path}"
     headers = {"X-KVMD-User": username, "X-KVMD-Passwd": password}
 
     ws = websocket.WebSocket(sslopt={"cert_reqs": ssl.CERT_NONE})
@@ -83,3 +86,22 @@ def wiggle(
 
     else:
         _wiggle()
+
+
+def paste(
+    hostname: str,
+    username: str,
+    password: str,
+    text: str,
+) -> None:
+    r = requests.post(
+        f"https://{hostname}/api/hid/print?limit=0",
+        text,
+        verify=False,
+        headers={"X-KVMD-User": username, "X-KVMD-Passwd": password},
+    )
+    # with connect(hostname, username, password, path="") as ws:
+    #    logger.debug("connected to %s, pasting test", hostname)
+    #    print(f"connected to {hostname}, pasting test")
+    #    ws.send(text, websocket.ABNF.OPCODE_TEXT)
+    print(r)

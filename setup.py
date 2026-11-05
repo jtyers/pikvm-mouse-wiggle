@@ -28,7 +28,9 @@ setup(
     packages=find_packages(exclude=("tests",)),
     include_package_data=True,
     install_requires=[
+        "requests>=2.28.2",
         "websocket>=0.2.1",
+        "websocket-client>=1.5.1",
     ],
     entry_points={
         "console_scripts": [

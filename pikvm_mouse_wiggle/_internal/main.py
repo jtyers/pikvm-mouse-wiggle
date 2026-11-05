@@ -2,9 +2,9 @@ import argparse
 import os
 import subprocess
 import sys
-import time
 
 from pikvm_mouse_wiggle import wiggle
+from pikvm_mouse_wiggle import paste
 from pikvm_mouse_wiggle import run_with_polling
 
 
@@ -40,6 +40,12 @@ def create_parser():
         "environment, subject to the same replacements as command",
     )
     parser.add_argument(
+        "-P",
+        "--paste",
+        type=str,
+        help="EXPERIMENTAL Instead of a wiggle, paste the given text",
+    )
+    parser.add_argument(
         "command",
         nargs="*",
         help="Optionally you can have pikvm-mouse-wiggle wrap a command, usually "
@@ -50,7 +56,7 @@ def create_parser():
         "well. This avoids you needing your own scripts to invoke a VNC viewer "
         "pikvm-mouse-wiggle together. The command to run can contain the "
         "placeholders %%h, %%u and %%p, which are replaced by hostname, username"
-        " and password respectively (e.g. 'vncviewer %h')",
+        " and password respectively (e.g. 'vncviewer %%h')",
     )
 
     return parser
@@ -68,46 +74,55 @@ def _main(args=None):
     # 2. if there is a command to run, we instead use child.py to manage all the
     #    intervals and delays, as it also polls the child process to check it's alive
 
-    print(args_namespace)
-    if not args_namespace.command:
-        wiggle(
+    if args_namespace.paste:
+        paste(
             args_namespace.hostname,
             args_namespace.username,
             args_namespace.password,
-            args_namespace.delay,
+            args_namespace.paste,
         )
 
     else:
-
-        def _wiggle(p: subprocess.Popen) -> None:
-            print("wiggle!", file=sys.stderr)
+        print(args_namespace)
+        if not args_namespace.command:
             wiggle(
                 args_namespace.hostname,
                 args_namespace.username,
                 args_namespace.password,
+                args_namespace.delay,
             )
 
-        def _replace_placeholders(s: str) -> str:
-            for k, v in dict(hostname="%h", username="%u", password="%p").items():
-                s = s.replace(v, getattr(args_namespace, k))
-            return s
+        else:
 
-        cmd = [_replace_placeholders(c) for c in args_namespace.command]
+            def _wiggle(p: subprocess.Popen) -> None:
+                print("wiggle!", file=sys.stderr)
+                wiggle(
+                    args_namespace.hostname,
+                    args_namespace.username,
+                    args_namespace.password,
+                )
 
-        env = {}
-        for e in args_namespace.env:
-            p = e.split("=")
-            env[p[0]] = _replace_placeholders(p[1])
+            def _replace_placeholders(s: str) -> str:
+                for k, v in dict(hostname="%h", username="%u", password="%p").items():
+                    s = s.replace(v, getattr(args_namespace, k))
+                return s
 
-        run_with_polling(
-            poll2_delay_secs=args_namespace.delay,
-            poll2_callback=_wiggle,
-            args=cmd,
-            env={
-                **os.environ,
-                **env,
-            },
-        )
+            cmd = [_replace_placeholders(c) for c in args_namespace.command]
+
+            env = {}
+            for e in args_namespace.env:
+                p = e.split("=")
+                env[p[0]] = _replace_placeholders(p[1])
+
+            run_with_polling(
+                poll2_delay_secs=args_namespace.delay,
+                poll2_callback=_wiggle,
+                args=cmd,
+                env={
+                    **os.environ,
+                    **env,
+                },
+            )
 
 
 def main(args=None):
@@ -115,3 +130,7 @@ def main(args=None):
         _main(args)
     except KeyboardInterrupt:
         pass  # suppress these
+
+
+if __name__ == "__main__":
+    main()
